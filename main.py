@@ -36,40 +36,40 @@ def get_html(url):
 
 
 def main():
-    url = "https://www.kleinanzeigen.de/s-wohnung-mieten/berlin/c203l3331"
-
     connect, cursor = init_db()
-    html = get_html(url)
-    soup = BeautifulSoup(html, "html.parser")
 
-    apartments: ResultSet[Tag] = soup.find_all("article", class_="aditem")
 
-    for apartment in apartments:
-        title = apartment.find("a", class_="ellipsis").text.strip()
+    for page in range(1, 4):
 
-        apartment_url = apartment.find("a", class_="ellipsis")["href"] 
+        current_url = f"https://www.kleinanzeigen.de/s-wohnung-mieten/berlin/seite:{page}/c203l3331"
+        html = get_html(current_url)
+        soup = BeautifulSoup(html, "html.parser")
 
-        full_link = "https://www.kleinanzeigen.de" + apartment_url
+        apartments: ResultSet[Tag] = soup.find_all("article", class_="aditem")
 
-        raw_price = apartment.find("p", class_="aditem-main--middle--price-shipping--price").text.strip()
 
-        clean_price = raw_price.replace("€", "").replace(".", "").strip().replace("VB", "")
+        for apartment in apartments:
 
-        new_price = float(clean_price)
+            title = apartment.find("a", class_="ellipsis").text.strip()
+            apartment_url = apartment.find("a", class_="ellipsis")["href"] 
+            full_link = "https://www.kleinanzeigen.de" + apartment_url
 
-        address = apartment.find("div", class_="aditem-main--top--left").text.strip()
+            raw_price = apartment.find("p", class_="aditem-main--middle--price-shipping--price").text.strip()
+            clean_price = raw_price.replace("€", "").replace(".", "").strip().replace("VB", "")
+            new_price = float(clean_price)
 
-        cursor.execute(
-            "INSERT OR IGNORE INTO apartmens (title, price, address, link) VALUES (?, ?, ?, ?)",
-            (title, new_price, address, full_link)
-        )
+            address = apartment.find("div", class_="aditem-main--top--left").text.strip()
 
-        print(f"apartment: {title} | clean price: {new_price} | address: {address} | link: {full_link}")
+            cursor.execute(
+                "INSERT OR IGNORE INTO apartmens (title, price, address, link) VALUES (?, ?, ?, ?)",
+                (title, new_price, address, full_link)
+            )
 
+            print(f"apartment: {title} | clean price: {new_price} | address: {address} | link: {full_link}")
 
     connect.commit()
-
     connect.close()
+    print(f"apartment: {title} | price: {new_price} | address: {address} | link: {full_link}")
 
 
 if __name__ == "__main__":
