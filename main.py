@@ -2,6 +2,26 @@ import requests
 import sqlite3
 from bs4 import BeautifulSoup
 
+connect = sqlite3.connect("books.db")  #подкл бд
+cursor = connect.cursor() 
+
+
+cursor.execute(
+    """
+    CREATE TABLE IF NOT EXISTS apartmens (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT,
+        price REAL,
+        address TEXT,
+        link TEXT UNIQUE
+    )
+"""
+)
+
+
+connect.commit()
+
+
 url = "https://www.kleinanzeigen.de/s-wohnung-mieten/berlin/c203l3331"
 
 
@@ -20,12 +40,26 @@ all_apartments = []
 for apartment in apartments:
     title = apartment.find("a", class_="ellipsis").text.strip()
 
+    apartment_url = apartment.find("a", class_="ellipsis")["href"] 
+
+    full_link = "https://www.kleinanzeigen.de" + apartment_url
+
     raw_price = apartment.find("p", class_="aditem-main--middle--price-shipping--price").text.strip()
 
     clean_price = raw_price.replace("€", "").replace(".", "").strip().replace("VB", "")
 
     new_price = float(clean_price)
 
-    adress = apartment.find("div", class_="aditem-main--top--left").text.strip()
+    address = apartment.find("div", class_="aditem-main--top--left").text.strip()
 
-    print(f"apartment: {title} | price: {new_price} | adress: {adress}")
+    cursor.execute(
+        "INSERT OR IGNORE INTO apartmens (title, price, address, link) VALUES (?, ?, ?, ?)",
+        (title, new_price, address, full_link)
+    )
+
+    print(f"apartment: {title} | clean price: {new_price} | address: {address} | link: {full_link}")
+
+
+connect.commit()
+
+connect.close()
