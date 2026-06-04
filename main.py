@@ -2,6 +2,7 @@ from bs4.element import Tag
 import requests
 import sqlite3
 from bs4 import BeautifulSoup, ResultSet
+import time
 
 
 def init_db():
@@ -39,7 +40,7 @@ def main():
     connect, cursor = init_db()
 
 
-    for page in range(1, 4):
+    for page in range(1, 41):
 
         current_url = f"https://www.kleinanzeigen.de/s-wohnung-mieten/berlin/seite:{page}/c203l3331"
         html = get_html(current_url)
@@ -49,14 +50,21 @@ def main():
 
 
         for apartment in apartments:
+            title_element = apartment.find("a", class_="ellipsis")
+            if title_element is None:
+                continue
 
-            title = apartment.find("a", class_="ellipsis").text.strip()
-            apartment_url = apartment.find("a", class_="ellipsis")["href"] 
+            title = title_element.text.strip()
+            apartment_url = title_element["href"]
             full_link = "https://www.kleinanzeigen.de" + apartment_url
 
             raw_price = apartment.find("p", class_="aditem-main--middle--price-shipping--price").text.strip()
-            clean_price = raw_price.replace("€", "").replace(".", "").strip().replace("VB", "")
-            new_price = float(clean_price)
+            try:
+                clean_price = raw_price.replace("€", "").replace(".", "").strip().replace("VB", "")
+                new_price = float(clean_price)
+            except ValueError:
+                print(f"[WARNING] Не удалось перевести цену в число: '{raw_price}'. Ставим 0.0")
+                new_price = 0.0
 
             address = apartment.find("div", class_="aditem-main--top--left").text.strip()
 
@@ -66,6 +74,10 @@ def main():
             )
 
             print(f"apartment: {title} | clean price: {new_price} | address: {address} | link: {full_link}")
+        
+        print("[INFO] Ожидание перед следующей страницей...")
+        time.sleep(2)
+
 
     connect.commit()
     connect.close()
