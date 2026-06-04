@@ -15,4 +15,17 @@ soup = BeautifulSoup(response.text, "html.parser")
 
 apartments = soup.find_all("article", class_="aditem")
 
-print(response.status_code)  # Проверяем статус ответа
+all_apartments = []
+
+for apartment in apartments:
+    title = apartment.find("a", class_="ellipsis").text.strip()
+
+    raw_price = apartment.find("p", class_="aditem-main--middle--price-shipping--price").text.strip()
+
+    clean_price = raw_price.replace("€", "").replace(".", "").strip().replace("VB", "")
+
+    new_price = float(clean_price)
+
+    adress = apartment.find("div", class_="aditem-main--top--left").text.strip()
+
+    print(f"apartment: {title} | price: {new_price} | adress: {adress}")
