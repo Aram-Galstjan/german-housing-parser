@@ -1,0 +1,6 @@
+{
+  "database_name": "apartments.db",
+  "max_pages": 3,
+  "sleep_time": 2,
+  "base_url": "https://www.kleinanzeigen.de/s-wohnung-mieten/berlin/seite:{page}/c203l3331"
+}

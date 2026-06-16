@@ -3,10 +3,22 @@ import requests
 import sqlite3
 from bs4 import BeautifulSoup, ResultSet
 import time
+import json
+import logging
 
 
-def init_db():
-    connect = sqlite3.connect("apartments.db")  #подкл бд
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[
+        logging.FileHandler("parser.log", encoding="utf-8"),   # Пишем в файл
+        logging.StreamHandler()                                # Дублируем в консоль
+    ]
+)
+
+
+def init_db(db_name):
+    connect = sqlite3.connect(db_name)  #подкл бд
     cursor = connect.cursor()
 
     cursor.execute(
@@ -37,12 +49,13 @@ def get_html(url):
 
 
 def main():
-    connect, cursor = init_db()
+    config = load_config()
+    connect, cursor = init_db(config["database_name"])
 
 
-    for page in range(1, 41):
+    for page in range(1, config["max_pages"] + 1):
 
-        current_url = f"https://www.kleinanzeigen.de/s-wohnung-mieten/berlin/seite:{page}/c203l3331"
+        current_url = config["base_url"].format(page=page)
         html = get_html(current_url)
         soup = BeautifulSoup(html, "html.parser")
 
@@ -63,7 +76,7 @@ def main():
                 clean_price = raw_price.replace("€", "").replace(".", "").strip().replace("VB", "")
                 new_price = float(clean_price)
             except ValueError:
-                print(f"[WARNING] Не удалось перевести цену в число: '{raw_price}'. Ставим 0.0")
+                logging.warning(f"Failed to convert the price to a number: '{raw_price}'. Setting to 0.0")
                 new_price = 0.0
 
             address = apartment.find("div", class_="aditem-main--top--left").text.strip()
@@ -73,15 +86,15 @@ def main():
                 (title, new_price, address, full_link)
             )
 
-            print(f"apartment: {title} | clean price: {new_price} | address: {address} | link: {full_link}")
+            logging.info(f"apartment: {title} | price: {new_price} | address: {address} | link: {full_link}")
         
-        print("[INFO] Ожидание перед следующей страницей...")
-        time.sleep(2)
+        logging.info(f"Waiting before the next page...")
+        time.sleep(config["sleep_time"])
 
 
     connect.commit()
     connect.close()
-    print(f"apartment: {title} | price: {new_price} | address: {address} | link: {full_link}")
+    logging.info(f"Done!")
 
 
 if __name__ == "__main__":
