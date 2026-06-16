@@ -10,7 +10,7 @@ def load_config():
 
 def run_analytics():
     config = load_config()
-    # Подключаемся к той базе, которая указана в конфиге
+    # database connection
     connect = sqlite3.connect(config["database_name"])
     cursor = connect.cursor()
 
@@ -18,12 +18,12 @@ def run_analytics():
     print("ANALYTICS OF THE REAL ESTATE MARKET (BERLIN)")
     print("=" * 50)
 
-    # 1. Сколько всего объявлений в базе
+    # How many listings are in the database
     cursor.execute("SELECT COUNT(*) FROM apartmens")
     total_apartments = cursor.fetchone()[0]
     print(f"Total apartments in database: {total_apartments}")
 
-    # 2. Средняя, максимальная и минимальная цена (исключая фейковые цены 0.0)
+    # Average, maximum, and minimum price (excluding fake 0.0 prices)
     cursor.execute("SELECT AVG(price), MIN(price), MAX(price) FROM apartmens WHERE price > 0")
     avg_price, min_price, max_price = cursor.fetchone()
     if avg_price:
@@ -31,7 +31,7 @@ def run_analytics():
         print(f"The cheapest apartment: {min_price:.2f} €")
         print(f"The most expensive apartment: {max_price:.2f} €")
     
-    # 3. Сколько объявлений отсеялось без цены (со значением 0.0)
+    # How many listings were filtered out without a price (with a value of 0.0)
     cursor.execute("SELECT COUNT(*) FROM apartmens WHERE price = 0")
     zero_prices = cursor.fetchone()[0]
     print(f"Listings with hidden/non-standard pricing (0.0): {zero_prices}")
@@ -40,7 +40,7 @@ def run_analytics():
     print("Top 5 best deals (price > 200€)")
     print("-" * 50)
 
-    # 4. Выводим 5 самых дешёвых квартир (но отсекаем подозрительные варианты дешевле 200€)
+    # Display the 5 cheapest apartments and remove options cheaper than €200
     cursor.execute("""
         SELECT title, price, link 
         FROM apartmens 

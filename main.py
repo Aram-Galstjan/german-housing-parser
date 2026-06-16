@@ -11,14 +11,20 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
-        logging.FileHandler("parser.log", encoding="utf-8"),   # Пишем в файл
-        logging.StreamHandler()                                # Дублируем в консоль
+        logging.FileHandler("parser.log", encoding="utf-8"),
+        logging.StreamHandler()                                
     ]
 )
 
 
+def load_config():
+    with open("config.json", "r") as file:
+        config = json.load(file)
+        return config
+    
+
 def init_db(db_name):
-    connect = sqlite3.connect(db_name)  #подкл бд
+    connect = sqlite3.connect(db_name)
     cursor = connect.cursor()
 
     cursor.execute(
@@ -40,7 +46,7 @@ def init_db(db_name):
 def get_html(url):
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept-Language": "de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7",  # Якобы наш браузер настроен на немецкий язык
+        "Accept-Language": "de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7",
     }
 
     response = requests.get(url, headers=headers)
